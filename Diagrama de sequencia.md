@@ -1,44 +1,48 @@
 ```mermaid
-
 sequenceDiagram
     autonumber
 
+    participant Sensor
+    actor Operador
+    participant Interface
+    participant Maquina as Máquina
+    participant BD as Banco de Dados
     actor Tecnico as Técnico
-    participant Sensor as Sensor IoT
-    participant Gateway as Gateway IoT
-    participant Plataforma as Plataforma de Monitoramento
-    participant Banco as Banco de Dados
-    participant OS as Serviço de Manutenção
 
     loop Monitoramento contínuo
-        Sensor->>Gateway: Coleta dados de telemetria
-        Gateway->>Plataforma: Envia telemetria
-        activate Plataforma
+        Sensor->>Maquina: Pede por dados para telemetria
+        Maquina-->>Sensor: Fornece dados
 
-        Plataforma->>Banco: Armazena os dados
-        
+        Sensor->>Interface: Envia telemetria
+        Interface->>BD: Armazena dados
+        BD-->>Interface: Confirma armazenamento
 
-        Plataforma->>Plataforma: Procura por erros
+        Interface->>Interface: Busca por erros
 
-        alt Equipamento funcionando normalmente
-            Plataforma-->>Gateway: Status normal
-        else Anomalia identificada
-            Plataforma->>OS: Solicita criação de OS
-            activate OS
+        alt Funcionamento normal
+            Interface-->>Operador: Exibe status normal
+        else Anomalia detectada
+            Interface-->>Operador: Notifica possível falha
 
-            OS->>Banco: Registra ordem de serviço
-            Banco-->>OS: Confirma criação da OS
+            Operador->>Interface: Solicita abertura de OS
+            Interface->>BD: Registra Ordem de Serviço
+            BD-->>Interface: Confirma criação da OS
 
-            OS-->>Plataforma: Retorna número da OS
-            deactivate OS
+            Interface-)Tecnico: Envia notificação de nova OS
 
-            Plataforma-->>Tecnico: Pede por uma manutenção preventiva
-            Tecnico-->>Plataforma: Confirma recebimento do pedido
+            Tecnico->>Interface: Consulta detalhes da OS
+            Interface->>BD: Busca informações da OS
+            BD-->>Interface: Retorna dados da OS
+            Interface-->>Tecnico: Exibe detalhes da manutenção
 
-            Plataforma->>Banco: Atualiza status da OS
+            Tecnico->>Maquina: Realiza manutenção preventiva
+            Maquina-->>Tecnico: Retorna estado atualizado
+
+            Tecnico->>Interface: Informa conclusão da manutenção
+            Interface->>BD: Atualiza status da OS
+            BD-->>Interface: Confirma atualização de status
+
+            Interface-->>Operador: Notifica conclusão da OS
         end
-
-        deactivate Plataforma
     end
-
 ```
